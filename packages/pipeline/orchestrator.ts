@@ -184,22 +184,52 @@ async function executePipeline(session: PipelineSession): Promise<void> {
       event: "stage_complete",
       stage: "researcher",
       progress: 70,
-      message: `Evidence retrieved from ${researchResult.total_sources} sources`,
-      data: { sources: researchResult.total_sources },
+      message: `Evidence retrieved from ${researchResult.total_sources} sources (agreement: ${(researchResult.agreement_score * 100).toFixed(0)}%)`,
+      data: { sources: researchResult.total_sources, agreement_score: researchResult.agreement_score },
     });
+
+    // Stage 2.5: Debate (conditional - only if agreement_score < 0.8)
+    let debateResult = null;
+    if (researchResult.agreement_score < 0.8) {
+      session.current_stage = "debate";
+      session.progress = 72;
+      emitEvent(session_id, {
+        session_id,
+        event: "progress",
+        stage: "debate",
+        progress: 72,
+        message: `Low agreement detected (${(researchResult.agreement_score * 100).toFixed(0)}%), initiating adversarial debate...`,
+      });
+
+      const { runDebate } = await import("./debate.js");
+      debateResult = await runDebate(claim, researchResult.verdicts);
+
+      emitEvent(session_id, {
+        session_id,
+        event: "stage_complete",
+        stage: "debate",
+        progress: 80,
+        message: `Debate complete: ${debateResult.consensus}`,
+        data: {
+          affirmative_confidence: debateResult.affirmative.confidence,
+          negative_confidence: debateResult.negative.confidence,
+          debate_agreement: debateResult.agreement_score,
+        },
+      });
+    }
 
     // Stage 3: Moderator (verdict synthesis)
     session.current_stage = "moderator";
-    session.progress = 75;
+    session.progress = debateResult ? 82 : 75;
     emitEvent(session_id, {
       session_id,
       event: "progress",
       stage: "moderator",
-      progress: 75,
+      progress: debateResult ? 82 : 75,
       message: "Synthesizing verdict...",
     });
 
-    const verdict = await runModeratorStage(claim, claim_hash, researchResult);
+    const verdict = await runModeratorStage(claim, claim_hash, researchResult, debateResult);
 
     emitEvent(session_id, {
       session_id,
@@ -292,8 +322,10 @@ async function runIngestionStage(claim: string): Promise<{
 async function runResearcherStage(sub_claims: string[]): Promise<{
   verdicts: any[];
   total_sources: number;
+  agreement_score: number;
 }> {
   const { researchClaim } = await import("./gemini-researcher.js");
+  const { calculateAgreementScore } = await import("./debate.js");
 
   const verdicts = [];
   let total_sources = 0;
@@ -304,7 +336,10 @@ async function runResearcherStage(sub_claims: string[]): Promise<{
     total_sources += verdict.sources.length;
   }
 
-  return { verdicts, total_sources };
+  // Calculate agreement score (0.0 - 1.0)
+  const agreement_score = calculateAgreementScore(verdicts);
+
+  return { verdicts, total_sources, agreement_score };
 }
 
 /**
@@ -313,10 +348,46 @@ async function runResearcherStage(sub_claims: string[]): Promise<{
 async function runModeratorStage(
   claim: string,
   claim_hash: string,
-  researchResult: any
+  researchResult: any,
+  debateResult: any = null
 ): Promise<Verdict> {
   const { VerdictSchema } = await import("@truthcast/shared/schema");
   const { aggregateSubClaimVerdicts } = await import("@truthcast/shared/constants");
+
+  // If debate was triggered, use debate consensus
+  if (debateResult) {
+    // Parse verdict from debate consensus (e.g., "TRUE", "FALSE", "CONFLICTING")
+    const debateVerdict = debateResult.consensus.match(/(TRUE|MOSTLY_TRUE|MISLEADING|MOSTLY_FALSE|FALSE|CONFLICTING|UNVERIFIABLE)/i)?.[0].toUpperCase() || "CONFLICTING";
+
+    // Determine minority view (the losing side's argument)
+    const minority_view = debateResult.affirmative.confidence < debateResult.negative.confidence
+      ? debateResult.affirmative.argument
+      : debateResult.negative.argument;
+
+    // Collect all sources from research verdicts
+    const allSources = researchResult.verdicts.flatMap((v: any) => v.sources || []);
+    const uniqueSources = Array.from(
+      new Map(allSources.map((s: any) => [s.url, s])).values()
+    ).slice(0, 10);
+
+    const verdict: Verdict = {
+      claim_hash,
+      claim_text: claim,
+      sub_claims: researchResult.verdicts.map((v: any) => v.claim || claim),
+      verdict: debateVerdict as any,
+      confidence: Math.round((debateResult.affirmative.confidence + debateResult.negative.confidence) / 2),
+      reasoning: debateResult.consensus,
+      sources: uniqueSources,
+      minority_view,
+      debate_triggered: true,
+      agreement_score: debateResult.agreement_score,
+      checked_at: Math.floor(Date.now() / 1000),
+      ttl_policy: "SHORT", // Debated verdicts have shorter TTL (more controversial)
+      pipeline_version: "2.0",
+    };
+
+    return VerdictSchema.parse(verdict);
+  }
 
   // If single claim, use research verdict directly
   if (researchResult.verdicts.length === 1) {
@@ -331,10 +402,10 @@ async function runModeratorStage(
       sources: research.sources,
       minority_view: null,
       debate_triggered: false,
-      agreement_score: 1.0,
+      agreement_score: researchResult.agreement_score,
       checked_at: Math.floor(Date.now() / 1000),
       ttl_policy: "LONG",
-      pipeline_version: "1.0.0",
+      pipeline_version: "2.0",
     };
 
     return VerdictSchema.parse(verdict);
@@ -356,7 +427,7 @@ async function runModeratorStage(
     agreement_score: aggregated.agreement_score,
     checked_at: Math.floor(Date.now() / 1000),
     ttl_policy: "LONG",
-    pipeline_version: "1.0.0",
+    pipeline_version: "2.0",
   };
 
   return VerdictSchema.parse(verdict);

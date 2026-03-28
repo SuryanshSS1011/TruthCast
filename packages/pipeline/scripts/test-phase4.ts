@@ -27,7 +27,7 @@ const TEST_CLAIMS = [
   },
   {
     claim: "5G towers were used to spread COVID-19 and were destroyed in protests across Europe.",
-    description: "Compound claim - should decompose into 2 sub-claims",
+    description: "Compound claim - should decompose and trigger debate (conflicting evidence)",
   },
   {
     claim: "Social media companies do more harm than good for democracy.",
@@ -37,10 +37,10 @@ const TEST_CLAIMS = [
 
 async function testPhase4() {
   console.log("\n" + "=".repeat(70));
-  console.log("=== TruthCast Phase 4: Full Pipeline Test ===");
+  console.log("=== TruthCast Phase 5: Adversarial Debate Test ===");
   console.log("=".repeat(70) + "\n");
 
-  const testClaim = TEST_CLAIMS[0]; // Start with simple claim
+  const testClaim = TEST_CLAIMS[1]; // Use 5G/COVID compound claim for debate test
 
   console.log(`Test claim: "${testClaim.claim}"`);
   console.log(`Description: ${testClaim.description}\n`);
@@ -62,7 +62,14 @@ async function testPhase4() {
         `[${timestamp}] [${event.progress}%] ✓ ${event.stage} complete: ${event.message}`
       );
       if (event.data) {
-        console.log(`           Data: ${JSON.stringify(event.data)}`);
+        // Special formatting for debate data
+        if (event.stage === "debate") {
+          console.log(`           Affirmative confidence: ${event.data.affirmative_confidence}%`);
+          console.log(`           Negative confidence: ${event.data.negative_confidence}%`);
+          console.log(`           Debate agreement: ${(event.data.debate_agreement * 100).toFixed(0)}%`);
+        } else {
+          console.log(`           Data: ${JSON.stringify(event.data)}`);
+        }
       }
     } else if (event.event === "complete") {
       console.log(`\n[${timestamp}] [${event.progress}%] ✅ ${event.message}\n`);
@@ -96,6 +103,14 @@ async function testPhase4() {
           console.log(`   TTL Policy: ${v.ttl_policy}`);
           console.log(`   Checked at: ${new Date(v.checked_at * 1000).toISOString()}`);
 
+          if (v.debate_triggered) {
+            console.log(`\n⚔️  Adversarial Debate:`);
+            console.log(`   Debate triggered: YES (low agreement: ${(v.agreement_score * 100).toFixed(0)}%)`);
+            if (v.minority_view) {
+              console.log(`   Minority view: ${v.minority_view.substring(0, 100)}...`);
+            }
+          }
+
           if (v.sources.length > 0) {
             console.log(`\n🔗 Top 3 Sources:`);
             v.sources.slice(0, 3).forEach((s, i) => {
@@ -118,9 +133,9 @@ async function testPhase4() {
 
           console.log(`\n⏱️  Total Time: ${((Date.now() - session.started_at) / 1000).toFixed(2)}s`);
           console.log("\n" + "=".repeat(70));
-          console.log("✅ Phase 4 COMPLETE: Full 4-stage pipeline with blockchain proof!");
+          console.log("✅ Phase 5 COMPLETE: Adversarial debate with 7-label taxonomy!");
           console.log("=".repeat(70));
-          console.log("\nNext: Test compound claim decomposition and opinion filtering\n");
+          console.log("\nNext: Phase 6 - Next.js frontend with real-time SSE progress bar\n");
         } else {
           console.log(`\n❌ Pipeline failed: ${session.error}\n`);
           process.exit(1);
