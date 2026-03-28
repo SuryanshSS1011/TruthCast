@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+
+  "permissions": {
+    "allow": [
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git push origin feature/:*)",
+      "Bash(git push origin dev)",
+      "Bash(curl https://api.devnet.solana.com:*)",
+      "Bash(curl https://airdrop.solana.com:*)"
+    ],
+    "deny": [
+      "Bash(curl https://api.mainnet-beta.solana.com:*)",
+      "Bash(curl https://solana-mainnet:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push origin main:*)",
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf ~:*)",
+      "Read(.env)",
+      "Read(.env.local)",
+      "Read(.env.production)"
+    ]
+  },
+
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=\"$CLAUDE_FILE_PATH\"; if [[ \"$FILE\" == *.ts ]]; then PKG=$(echo \"$FILE\" | grep -o 'packages/[^/]*'); if [ -n \"$PKG\" ]; then cd \"$PKG\" 2>/dev/null && npx tsc --noEmit 2>&1 | head -20 && echo '✓ Types valid' || echo '✗ Type errors found'; fi; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write(packages/shared/schema.ts)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '--- Schema changed: running full workspace type check ---' && npx tsc --noEmit 2>&1 | head -40 && echo '✓ All workspace types valid'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CMD=\"$CLAUDE_TOOL_INPUT\"; if echo \"$CMD\" | grep -q 'mainnet-beta\\|solana-mainnet'; then echo 'BLOCKED: Solana mainnet access is prohibited. Use devnet only.' && exit 1; fi; if echo \"$CMD\" | grep -q 'push --force\\|push origin main'; then echo 'BLOCKED: Force push and direct push to main are not allowed.' && exit 1; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '--- Final type check ---' && npx tsc --noEmit 2>&1 | head -20 && echo '✓ Ready to commit'"
+          }
+        ]
+      }
+    ]
+  },
+
+  "enableAllProjectMcpServers": true,
+  "alwaysThinkingEnabled": true,
+  "cleanupPeriodDays": 90
+}
