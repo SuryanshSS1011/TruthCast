@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test-solana": "tsx scripts/test-solana-funded.ts"
+    "test-solana": "tsx scripts/test-solana-funded.ts",
+    "test-gemini": "tsx scripts/test-gemini.ts"
   },
   "dependencies": {
     "@truthcast/shared": "*",
     "@solana/web3.js": "^1.91.1",
     "@solana/spl-memo": "^0.2.5",
     "@sentry/node": "^7.99.0",
+    "@google/generative-ai": "^0.21.0",
     "better-sqlite3": "^9.4.0",
     "bs58": "^5.0.0",
     "dotenv": "^16.4.1"
