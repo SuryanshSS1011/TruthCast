@@ -28,8 +28,16 @@ export function buildUnverifiableVerdict(claim: any, claimHash: string): Verdict
 }
 
 /**
- * Writes a verdict to Solana devnet using the Memo Program
- * Returns the transaction signature or throws on error
+ * Writes minimal verdict proof to Solana blockchain (audit layer)
+ *
+ * Architecture:
+ * - Blockchain (Solana): Immutable proof-of-existence (~100 bytes)
+ * - Database (SQLite): Full verdict with reasoning, sources, sub-claims
+ *
+ * On-chain record format:
+ * {"h":"claim_hash","v":"TRUE","c":100,"t":1774731159,"pv":"1.0.0"}
+ *
+ * Returns transaction signature or throws on error
  */
 export async function writeSolanaVerdict(verdict: Verdict): Promise<string> {
   try {
@@ -50,27 +58,23 @@ export async function writeSolanaVerdict(verdict: Verdict): Promise<string> {
 
     const keypair = Keypair.fromSecretKey(bs58.decode(privateKeyString));
 
-    // Serialize verdict to JSON
-    let verdictJson = JSON.stringify(verdict);
+    // Create minimal on-chain proof (audit layer only)
+    // Blockchain = proof-of-existence, SQLite = full verdict storage
+    // Only write: claim_hash, verdict, confidence, timestamp, version
+    const minimalProof = {
+      h: verdict.claim_hash,           // claim hash
+      v: verdict.verdict,              // verdict label
+      c: verdict.confidence,           // confidence score
+      t: verdict.checked_at,           // checked timestamp
+      pv: verdict.pipeline_version,   // pipeline version
+    };
 
-    // Memo Program has max size of 566 bytes
-    // If too large, truncate sources to top 3
-    if (Buffer.byteLength(verdictJson, "utf8") > 566) {
-      const truncatedVerdict = {
-        ...verdict,
-        sources: verdict.sources.slice(0, 3),
-      };
-      verdictJson = JSON.stringify(truncatedVerdict);
-    }
+    const verdictJson = JSON.stringify(minimalProof);
 
-    // Still too large? Truncate reasoning
-    if (Buffer.byteLength(verdictJson, "utf8") > 566) {
-      const truncatedVerdict = {
-        ...verdict,
-        sources: verdict.sources.slice(0, 3),
-        reasoning: verdict.reasoning.substring(0, 200) + "...",
-      };
-      verdictJson = JSON.stringify(truncatedVerdict);
+    // Verify size is well under limit (~100 bytes vs 566 byte max)
+    const size = Buffer.byteLength(verdictJson, "utf8");
+    if (size > 500) {
+      console.warn(`⚠️  Minimal proof unexpectedly large: ${size} bytes`);
     }
 
     // Create memo instruction

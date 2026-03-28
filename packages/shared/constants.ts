@@ -19,8 +19,8 @@ export const VERDICT_SEVERITY: VerdictLabelType[] = [
   "UNVERIFIABLE",
 ];
 
-// Sub-claim Aggregation Rule
-export function aggregateSubClaimVerdicts(
+// Sub-claim Aggregation Rule (simple version for verdict labels only)
+export function aggregateVerdictLabels(
   verdicts: VerdictLabelType[]
 ): VerdictLabelType {
   if (verdicts.length === 0) return "UNVERIFIABLE";
@@ -109,4 +109,83 @@ export function calculateConfidence(
   const subClaimPenalty = Math.pow(0.9, numSubClaims - 1);
 
   return Math.round(baseConfidence * subClaimPenalty * 100);
+}
+
+// Sub-Claim Aggregation
+export function aggregateSubClaimVerdicts(subVerdicts: any[]): {
+  verdict: string;
+  confidence: number;
+  reasoning: string;
+  sources: any[];
+  agreement_score: number;
+} {
+  const verdictCounts: Record<string, number> = {};
+  let allSources: any[] = [];
+
+  // Count verdicts and collect sources
+  for (const v of subVerdicts) {
+    verdictCounts[v.verdict] = (verdictCounts[v.verdict] || 0) + 1;
+    allSources = allSources.concat(v.sources);
+  }
+
+  // Remove duplicate sources
+  const uniqueSources = Array.from(
+    new Map(allSources.map((s) => [s.url, s])).values()
+  ).slice(0, 10);
+
+  const total = subVerdicts.length;
+  const falseCount = verdictCounts["FALSE"] || 0;
+  const mostlyFalseCount = verdictCounts["MOSTLY_FALSE"] || 0;
+  const conflictingCount = verdictCounts["CONFLICTING"] || 0;
+
+  let compoundVerdict: string;
+  let reasoning: string;
+
+  // Apply aggregation rules
+  if (falseCount / total > 0.5) {
+    // Rule 1: >50% FALSE
+    compoundVerdict = "FALSE";
+    reasoning = `This compound claim is FALSE because more than half of its sub-claims (${falseCount}/${total}) are false.`;
+  } else if (falseCount > 0) {
+    // Rule 2: Any FALSE but ≤50%
+    compoundVerdict = "MISLEADING";
+    reasoning = `This compound claim is MISLEADING because it contains ${falseCount} false sub-claim(s) out of ${total} total.`;
+  } else if (mostlyFalseCount / total > 0.5) {
+    // Rule 3: Majority MOSTLY_FALSE
+    compoundVerdict = "MOSTLY_FALSE";
+    reasoning = `This compound claim is MOSTLY_FALSE because the majority of sub-claims (${mostlyFalseCount}/${total}) are mostly false.`;
+  } else if (conflictingCount > 0) {
+    // Rule 4: Any CONFLICTING
+    compoundVerdict = "CONFLICTING";
+    reasoning = `This compound claim has CONFLICTING evidence across its ${total} sub-claims.`;
+  } else {
+    // Rule 5: All true-family, pick most severe
+    const severityOrder = ["MOSTLY_TRUE", "TRUE"];
+    for (const label of severityOrder) {
+      if (verdictCounts[label]) {
+        compoundVerdict = label;
+        break;
+      }
+    }
+    compoundVerdict = compoundVerdict || "TRUE";
+    reasoning = `This compound claim is ${compoundVerdict} because all ${total} sub-claims are in the true category.`;
+  }
+
+  // Calculate aggregated confidence with sub-claim penalty
+  const avgConfidence =
+    subVerdicts.reduce((sum, v) => sum + v.confidence, 0) / subVerdicts.length;
+  const subClaimPenalty = Math.pow(0.9, subVerdicts.length - 1);
+  const confidence = Math.round(avgConfidence * subClaimPenalty);
+
+  // Calculate agreement score (how much sub-verdicts agree)
+  const maxCount = Math.max(...Object.values(verdictCounts));
+  const agreement_score = maxCount / total;
+
+  return {
+    verdict: compoundVerdict,
+    confidence,
+    reasoning,
+    sources: uniqueSources,
+    agreement_score,
+  };
 }

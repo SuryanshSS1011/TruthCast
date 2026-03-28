@@ -15,9 +15,10 @@ export type VerdictLabelType = z.infer<typeof VerdictLabel>;
 
 export const SourceSchema = z.object({
   url: z.string().url(),
-  domain_tier: z.enum(["A", "B", "C", "UNKNOWN"]),
-  stance: z.enum(["supports", "refutes", "neutral"]),
-  mbfc_score: z.number().min(0).max(1).optional(),
+  domain: z.string(),
+  credibility_score: z.number().min(0).max(1),
+  domain_tier: z.string(),
+  excerpt: z.string().optional(),
 });
 
 export type Source = z.infer<typeof SourceSchema>;
