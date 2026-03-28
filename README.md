@@ -152,11 +152,13 @@ Follow this exact sequence from the Architecture Plan:
 - [x] Audio playback in browser
 - [x] Combine Phase 2 + 3 for end-to-end claim → voice verdict
 
-### Phase 4 (5.5–11h)
-- [ ] OpenClaw 4-agent pipeline (ingestion → researcher → moderator → publisher)
-- [ ] SSE progress bar with real-time updates
-- [ ] Claim decomposition (HiSS method)
-- [ ] Checkworthiness filter
+### Phase 4 (5.5–11h) ✅ COMPLETE
+- [x] 4-stage autonomous pipeline (ingestion → researcher → moderator → publisher)
+- [x] SSE progress bar with real-time updates (EventEmitter-based)
+- [x] Claim decomposition (HiSS method)
+- [x] Checkworthiness filter (Full Fact criteria)
+- [x] Sub-claim aggregation with confidence penalty
+- [x] Minimal blockchain proof (~100 bytes vs full verdict)
 
 ### Phase 5 (11–16h)
 - [ ] Debate agents (affirmative + negative)
