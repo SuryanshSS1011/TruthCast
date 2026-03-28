@@ -1,0 +1,16 @@
+{
+  "name": "truthcast",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=packages/web",
+    "build": "npm run build --workspace=packages/web",
+    "test-solana": "node packages/pipeline/scripts/test-solana.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

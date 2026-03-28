@@ -1,0 +1,23 @@
+{
+  "name": "@truthcast/pipeline",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test-solana": "tsx scripts/test-solana-funded.ts"
+  },
+  "dependencies": {
+    "@truthcast/shared": "*",
+    "@solana/web3.js": "^1.91.1",
+    "@solana/spl-memo": "^0.2.5",
+    "@sentry/node": "^7.99.0",
+    "better-sqlite3": "^9.4.0",
+    "bs58": "^5.0.0",
+    "dotenv": "^16.4.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
+    "@types/node": "^20.11.16",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}

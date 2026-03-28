@@ -1,0 +1,17 @@
+{
+  "reuters.com": 0.97,
+  "who.int": 0.99,
+  "nasa.gov": 0.98,
+  "cdc.gov": 0.98,
+  "bbc.com": 0.92,
+  "apnews.com": 0.96,
+  "npr.org": 0.93,
+  "theguardian.com": 0.89,
+  "nytimes.com": 0.91,
+  "washingtonpost.com": 0.90,
+  "forbes.com": 0.75,
+  "cnn.com": 0.78,
+  "foxnews.com": 0.65,
+  "breitbart.com": 0.35,
+  "infowars.com": 0.15
+}
