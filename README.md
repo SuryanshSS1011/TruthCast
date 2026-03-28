@@ -105,6 +105,34 @@ This script will:
 
 ---
 
+### Phase 3: Test Voice Verdict (Optional)
+
+Once you have ElevenLabs API credentials, you can test the full pipeline with voice output:
+
+```bash
+# Add to .env:
+# ELEVENLABS_API_KEY=your_api_key
+# ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM  # Rachel voice (or choose another)
+
+# Run Phase 3 test
+npm run test-phase3 --workspace=packages/pipeline
+
+# Start test server for browser playback
+npm run test-audio
+
+# Open http://localhost:3000 in browser
+```
+
+This will:
+1. Research a test claim with Gemini
+2. Generate natural voice audio with ElevenLabs
+3. Save `output-phase3-test.mp3`
+4. Serve a test page for browser audio playback
+
+Get a free ElevenLabs API key at: https://elevenlabs.io/api
+
+---
+
 ## Build Order (8 Phases)
 
 Follow this exact sequence from the Architecture Plan:
@@ -114,15 +142,15 @@ Follow this exact sequence from the Architecture Plan:
 - [x] Confirm transaction on Solana Explorer
 - [x] SQLite schema and init
 
-### Phase 2 (1.5–4h)
-- [ ] Gemini grounded verdict (single API call with google_search tool)
-- [ ] MBFC domain scoring
-- [ ] Test on 5 pre-selected demo claims
+### Phase 2 (1.5–4h) ✅ COMPLETE
+- [x] Gemini grounded verdict (single API call with google_search tool)
+- [x] MBFC domain scoring
+- [x] Test on 5 pre-selected demo claims (3/5 exact matches, 60%)
 
-### Phase 3 (4–5.5h)
-- [ ] ElevenLabs TTS integration
-- [ ] Audio playback in browser
-- [ ] Combine Phase 2 + 3 for end-to-end claim → voice verdict
+### Phase 3 (4–5.5h) ✅ COMPLETE
+- [x] ElevenLabs TTS integration
+- [x] Audio playback in browser
+- [x] Combine Phase 2 + 3 for end-to-end claim → voice verdict
 
 ### Phase 4 (5.5–11h)
 - [ ] OpenClaw 4-agent pipeline (ingestion → researcher → moderator → publisher)

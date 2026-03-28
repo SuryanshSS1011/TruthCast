@@ -120,10 +120,10 @@ export async function elevenLabsTTS(text: string): Promise<string | null> {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_monolingual_v1",
+          model_id: "eleven_turbo_v2_5", // Free tier compatible model
           voice_settings: {
             stability: 0.5,
-            similarity_boost: 0.5,
+            similarity_boost: 0.75,
           },
         }),
       }

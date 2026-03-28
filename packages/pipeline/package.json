@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test-solana": "tsx scripts/test-solana-funded.ts",
-    "test-gemini": "tsx scripts/test-gemini.ts"
+    "test-gemini": "tsx scripts/test-gemini.ts",
+    "test-phase3": "tsx scripts/test-phase3.ts"
   },
   "dependencies": {
     "@truthcast/shared": "*",

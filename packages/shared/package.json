@@ -1,7 +1,13 @@
 {
   "name": "@truthcast/shared",
   "version": "1.0.0",
+  "type": "module",
   "main": "schema.ts",
+  "exports": {
+    "./schema": "./schema.ts",
+    "./constants": "./constants.ts",
+    "./mbfc.json": "./mbfc.json"
+  },
   "dependencies": {
     "zod": "^3.22.4"
   }
