@@ -24,7 +24,7 @@ async function run() {
 
   // Initialize Gemini
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   // Checkworthiness assessment
   const checkPrompt = `Is this claim factually checkworthy? Respond with YES or NO and a brief reason.

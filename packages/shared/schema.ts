@@ -37,6 +37,8 @@ export const VerdictSchema = z.object({
   checked_at: z.number().int(),
   ttl_policy: z.enum(["SHORT", "LONG", "STATIC"]),
   pipeline_version: z.string(),
+  tx_hash: z.string().nullable().optional(),
+  audio_url: z.string().nullable().optional(), // Base64 data URL for TTS audio
 });
 
 export type Verdict = z.infer<typeof VerdictSchema>;

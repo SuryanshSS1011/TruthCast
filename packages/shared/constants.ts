@@ -143,8 +143,8 @@ export function aggregateSubClaimVerdicts(subVerdicts: any[]): {
   const mostlyFalseCount = verdictCounts["MOSTLY_FALSE"] || 0;
   const conflictingCount = verdictCounts["CONFLICTING"] || 0;
 
-  let compoundVerdict: string;
-  let reasoning: string;
+  let compoundVerdict: string = "TRUE";
+  let reasoning: string = "";
 
   // Apply aggregation rules
   if (falseCount / total > 0.5) {

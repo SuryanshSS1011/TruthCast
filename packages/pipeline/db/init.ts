@@ -1,22 +1,58 @@
 // packages/pipeline/db/init.ts
 import Database from "better-sqlite3";
-import { readFileSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { join } from "path";
+import { existsSync, mkdirSync } from "fs";
 import { VerdictSchema, type Verdict } from "@truthcast/shared/schema";
 import { TTL_POLICIES } from "@truthcast/shared/constants";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// Schema inlined to avoid file read issues with webpack bundling
+const SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS verdicts (
+  claim_hash TEXT PRIMARY KEY,
+  claim_text TEXT NOT NULL,
+  verdict_json TEXT NOT NULL,
+  verdict_label TEXT NOT NULL,
+  confidence INTEGER NOT NULL,
+  tx_hash TEXT,
+  checked_at INTEGER NOT NULL,
+  ttl_policy TEXT NOT NULL,
+  pipeline_version TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_checked_at ON verdicts (checked_at);
+CREATE INDEX IF NOT EXISTS idx_verdict_label ON verdicts (verdict_label);
+`;
 
-// Initialize database - use absolute path from project root
-// Find the project root by going up from current directory
-const projectRoot = join(__dirname, '../../..');
-const dbPath = process.env.SQLITE_PATH || join(projectRoot, 'packages/pipeline/db/truthcast.db');
+// Resolve database path - works in both direct Node.js and Next.js bundled environments
+function resolveDbPath(): string {
+  // 1. Check explicit env var first (highest priority)
+  if (process.env.SQLITE_PATH) {
+    return process.env.SQLITE_PATH;
+  }
+
+  // 2. Use process.cwd() which is the project root when running npm scripts
+  const cwd = process.cwd();
+
+  // If running from packages/web (Next.js), go up one level
+  if (cwd.endsWith('/packages/web')) {
+    return join(cwd, '../pipeline/db/truthcast.db');
+  }
+
+  // If running from project root
+  return join(cwd, 'packages/pipeline/db/truthcast.db');
+}
+
+const dbPath = resolveDbPath();
+
+// Ensure directory exists
+const dbDir = join(dbPath, '..');
+if (!existsSync(dbDir)) {
+  mkdirSync(dbDir, { recursive: true });
+}
+
 export const db = new Database(dbPath);
 
 // Run schema
-const schema = readFileSync(join(__dirname, "schema.sql"), "utf8");
-db.exec(schema);
+db.exec(SCHEMA_SQL);
 
 // Stage 0: Cache lookup function
 export function getCachedVerdict(claimHash: string): Verdict | null {

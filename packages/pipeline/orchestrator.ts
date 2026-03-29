@@ -40,12 +40,24 @@ export interface PipelineEvent {
   data?: any;
 }
 
-// Module-level EventEmitter singleton for SSE
-export const pipelineEmitter = new EventEmitter();
+// Global EventEmitter singleton for SSE - ensures same instance across Next.js routes
+const globalForPipeline = globalThis as unknown as {
+  pipelineEmitter: EventEmitter | undefined;
+  pipelineSessions: Map<string, PipelineSession> | undefined;
+};
+
+export const pipelineEmitter = globalForPipeline.pipelineEmitter ?? new EventEmitter();
 pipelineEmitter.setMaxListeners(50); // Support concurrent sessions
 
-// Active sessions map
-const sessions = new Map<string, PipelineSession>();
+if (!globalForPipeline.pipelineEmitter) {
+  globalForPipeline.pipelineEmitter = pipelineEmitter;
+}
+
+// Active sessions map - also global
+const sessions = globalForPipeline.pipelineSessions ?? new Map<string, PipelineSession>();
+if (!globalForPipeline.pipelineSessions) {
+  globalForPipeline.pipelineSessions = sessions;
+}
 
 /**
  * Start a new pipeline session
@@ -90,9 +102,66 @@ export function getSession(session_id: string): PipelineSession | null {
 }
 
 /**
- * Execute the full pipeline
+ * Execute pipeline with callback for streaming (used by Next.js route)
+ * This avoids EventEmitter issues with webpack bundling
+ */
+export async function executePipelineWithCallback(
+  session_id: string,
+  claim: string,
+  onEvent: (event: PipelineEvent) => void
+): Promise<void> {
+  const claim_hash = normalizeAndHash(claim);
+
+  const session: PipelineSession = {
+    session_id,
+    claim,
+    claim_hash,
+    started_at: Date.now(),
+    status: "pending",
+    current_stage: "cache_check",
+    progress: 0,
+  };
+
+  sessions.set(session_id, session);
+
+  // Use the callback instead of emitEvent
+  const emit = (event: PipelineEvent) => {
+    try {
+      onEvent(event);
+    } catch (e) {
+      console.error('Error in onEvent callback:', e);
+    }
+  };
+
+  try {
+    await executePipelineInternal(session, emit);
+  } catch (error: any) {
+    console.error(`Pipeline ${session_id} failed:`, error);
+    session.status = "failed";
+    session.error = error.message;
+    emit({
+      session_id,
+      event: "error",
+      progress: session.progress,
+      message: `Pipeline failed: ${error.message}`,
+    });
+  }
+}
+
+/**
+ * Execute the full pipeline (internal, uses emitEvent)
  */
 async function executePipeline(session: PipelineSession): Promise<void> {
+  await executePipelineInternal(session, (event) => emitEvent(session.session_id, event));
+}
+
+/**
+ * Internal pipeline execution with custom emit function
+ */
+async function executePipelineInternal(
+  session: PipelineSession,
+  emit: (event: PipelineEvent) => void
+): Promise<void> {
   const { session_id, claim, claim_hash } = session;
 
   try {
@@ -100,12 +169,12 @@ async function executePipeline(session: PipelineSession): Promise<void> {
     session.status = "running";
     session.current_stage = "cache_check";
     session.progress = 5;
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "progress",
       stage: "cache_check",
       progress: 5,
-      message: "Checking cache for existing verdict...",
+      message: "Stage 0: Checking cache for existing verdict...",
     });
 
     const cached = getCachedVerdict(claim_hash);
@@ -113,7 +182,7 @@ async function executePipeline(session: PipelineSession): Promise<void> {
       session.status = "completed";
       session.verdict = cached;
       session.progress = 100;
-      emitEvent(session_id, {
+      emit({
         session_id,
         event: "complete",
         progress: 100,
@@ -123,7 +192,7 @@ async function executePipeline(session: PipelineSession): Promise<void> {
       return;
     }
 
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "stage_complete",
       stage: "cache_check",
@@ -134,12 +203,12 @@ async function executePipeline(session: PipelineSession): Promise<void> {
     // Stage 1: Ingestion (checkworthiness + decomposition)
     session.current_stage = "ingestion";
     session.progress = 15;
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "progress",
       stage: "ingestion",
       progress: 15,
-      message: "Analyzing claim checkworthiness...",
+      message: "Stage 1: Ingestion - Analyzing claim checkworthiness...",
     });
 
     const ingestionResult = await runIngestionStage(claim);
@@ -152,7 +221,7 @@ async function executePipeline(session: PipelineSession): Promise<void> {
       session.status = "completed";
       session.verdict = verdict;
       session.progress = 100;
-      emitEvent(session_id, {
+      emit({
         session_id,
         event: "complete",
         progress: 100,
@@ -162,34 +231,34 @@ async function executePipeline(session: PipelineSession): Promise<void> {
       return;
     }
 
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "stage_complete",
       stage: "ingestion",
       progress: 30,
-      message: `Claim decomposed into ${ingestionResult.sub_claims.length} sub-claim(s)`,
+      message: `Stage 1: Ingestion complete - ${ingestionResult.sub_claims.length} sub-claim(s)`,
       data: { sub_claims: ingestionResult.sub_claims },
     });
 
     // Stage 2: Researcher (evidence retrieval)
     session.current_stage = "researcher";
     session.progress = 35;
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "progress",
       stage: "researcher",
       progress: 35,
-      message: "Retrieving evidence with Gemini API...",
+      message: "Stage 2: Researcher - Retrieving evidence with Gemini API...",
     });
 
     const researchResult = await runResearcherStage(ingestionResult.sub_claims);
 
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "stage_complete",
       stage: "researcher",
       progress: 70,
-      message: `Evidence retrieved from ${researchResult.total_sources} sources (agreement: ${(researchResult.agreement_score * 100).toFixed(0)}%)`,
+      message: `Stage 2: Researcher complete - ${researchResult.total_sources} sources (${(researchResult.agreement_score * 100).toFixed(0)}% agreement)`,
       data: { sources: researchResult.total_sources, agreement_score: researchResult.agreement_score },
     });
 
@@ -198,23 +267,23 @@ async function executePipeline(session: PipelineSession): Promise<void> {
     if (researchResult.agreement_score < 0.8) {
       session.current_stage = "debate";
       session.progress = 72;
-      emitEvent(session_id, {
+      emit({
         session_id,
         event: "progress",
         stage: "debate",
         progress: 72,
-        message: `Low agreement detected (${(researchResult.agreement_score * 100).toFixed(0)}%), initiating adversarial debate...`,
+        message: `Stage 3: Debate - Low agreement (${(researchResult.agreement_score * 100).toFixed(0)}%), initiating adversarial debate...`,
       });
 
       const { runDebate } = await import("./debate.js");
       debateResult = await runDebate(claim, researchResult.verdicts);
 
-      emitEvent(session_id, {
+      emit({
         session_id,
         event: "stage_complete",
         stage: "debate",
         progress: 80,
-        message: `Debate complete: ${debateResult.consensus}`,
+        message: `Stage 3: Debate complete - ${debateResult.consensus}`,
         data: {
           affirmative_confidence: debateResult.affirmative.confidence,
           negative_confidence: debateResult.negative.confidence,
@@ -223,37 +292,37 @@ async function executePipeline(session: PipelineSession): Promise<void> {
       });
     }
 
-    // Stage 3: Moderator (verdict synthesis)
+    // Stage 3/4: Moderator (verdict synthesis)
     session.current_stage = "moderator";
     session.progress = debateResult ? 82 : 75;
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "progress",
       stage: "moderator",
       progress: debateResult ? 82 : 75,
-      message: "Synthesizing verdict...",
+      message: `Stage ${debateResult ? '4' : '3'}: Moderator - Synthesizing verdict...`,
     });
 
     const verdict = await runModeratorStage(claim, claim_hash, researchResult, debateResult);
 
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "stage_complete",
       stage: "moderator",
       progress: 85,
-      message: `Verdict: ${verdict.verdict} (${verdict.confidence}% confidence)`,
+      message: `Stage ${debateResult ? '4' : '3'}: Moderator complete - ${verdict.verdict} (${verdict.confidence}%)`,
       data: { verdict: verdict.verdict, confidence: verdict.confidence },
     });
 
-    // Stage 4: Publisher (Solana + audio + cache)
+    // Stage 4/5: Publisher (Solana + audio + cache)
     session.current_stage = "publisher";
     session.progress = 90;
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "progress",
       stage: "publisher",
       progress: 90,
-      message: "Publishing verdict to blockchain...",
+      message: `Stage ${debateResult ? '5' : '4'}: Publisher - Writing to blockchain...`,
     });
 
     await runPublisherStage(verdict);
@@ -262,7 +331,7 @@ async function executePipeline(session: PipelineSession): Promise<void> {
     session.status = "completed";
     session.verdict = verdict;
     session.progress = 100;
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "complete",
       progress: 100,
@@ -273,7 +342,7 @@ async function executePipeline(session: PipelineSession): Promise<void> {
   } catch (error: any) {
     session.status = "failed";
     session.error = error.message;
-    emitEvent(session_id, {
+    emit({
       session_id,
       event: "error",
       progress: session.progress,
@@ -398,7 +467,7 @@ async function runModeratorStage(
 
   // For multiple sub-claims or debate cases, use Gemini to synthesize verdict
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   // Build evidence summary
   const evidenceSummary = researchResult.verdicts.map((v: any, i: number) => {
@@ -512,8 +581,9 @@ Respond with ONLY the JSON object, no additional text.`;
 
 /**
  * Stage 4: Publisher
+ * Returns { tx_hash, audio_url } to be added to the verdict
  */
-async function runPublisherStage(verdict: Verdict): Promise<void> {
+async function runPublisherStage(verdict: Verdict): Promise<{ tx_hash: string | null; audio_url: string | null }> {
   const { writeSolanaVerdict, elevenLabsTTS } = await import("./helpers.js");
   const { writeVerdict } = await import("./db/init.js");
 
@@ -530,8 +600,14 @@ async function runPublisherStage(verdict: Verdict): Promise<void> {
     verdict.confidence >= 90 ? "very high" : verdict.confidence >= 70 ? "high" : "moderate"
   } confidence. ${verdict.reasoning.split(/[.!?]/)[0]}.`;
 
-  await elevenLabsTTS(voiceScript);
+  const audio_url = await elevenLabsTTS(voiceScript);
+
+  // Update verdict with tx_hash and audio_url
+  verdict.tx_hash = tx_hash;
+  verdict.audio_url = audio_url;
 
   // Write to SQLite cache
   await writeVerdict(verdict, tx_hash);
+
+  return { tx_hash, audio_url };
 }
