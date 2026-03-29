@@ -112,7 +112,7 @@ export default function Home() {
           </p>
           <nav style={{ marginTop: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href="/history" style={{ color: 'white', opacity: 0.9, textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>History</a>
-            <span style={{ color: 'white', opacity: 0.5' }}>•</span>
+            <span style={{ color: 'white', opacity: 0.5 }}>•</span>
             <a href="/explorer" style={{ color: 'white', opacity: 0.9, textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>Ledger</a>
           </nav>
         </header>

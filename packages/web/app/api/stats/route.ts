@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '../../../../../pipeline/db/init';
+import { db } from '@truthcast/pipeline/db/init';
 
 export async function GET() {
   try {

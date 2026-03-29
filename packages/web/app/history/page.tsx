@@ -1,4 +1,4 @@
-import { db } from '../../../../pipeline/db/init';
+import { db } from '@truthcast/pipeline/db/init';
 import styles from './history.module.css';
 import Link from 'next/link';
 

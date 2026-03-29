@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getCachedVerdict } from '../../../../../pipeline/db/init';
+import { getCachedVerdict } from '@truthcast/pipeline/db/init';
 import type { Verdict } from '@truthcast/shared/schema';
 import styles from '../../page.module.css';
 import type { Metadata } from 'next';

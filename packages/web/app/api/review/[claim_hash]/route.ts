@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCachedVerdict } from '../../../../../../pipeline/db/init';
+import { getCachedVerdict } from '@truthcast/pipeline/db/init';
 
 export async function GET(
   req: NextRequest,
