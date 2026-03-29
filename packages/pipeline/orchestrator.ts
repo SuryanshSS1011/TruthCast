@@ -11,8 +11,10 @@
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
 import type { Verdict } from "@truthcast/shared/schema";
+import { VerdictSchema } from "@truthcast/shared/schema";
 import { normalizeAndHash } from "./normalize.js";
 import { getCachedVerdict } from "./db/init.js";
+import { Sentry } from "./sentry.js";
 
 export interface PipelineSession {
   session_id: string;
@@ -386,7 +388,18 @@ async function runModeratorStage(
       pipeline_version: "2.0",
     };
 
-    return VerdictSchema.parse(verdict);
+    try {
+      return VerdictSchema.parse(verdict);
+    } catch (err) {
+      Sentry.captureException(err, {
+        extra: {
+          stage: "moderator_schema_validation",
+          claim_hash,
+          verdict_type: "debate",
+        },
+      });
+      throw err;
+    }
   }
 
   // If single claim, use research verdict directly
@@ -408,7 +421,18 @@ async function runModeratorStage(
       pipeline_version: "2.0",
     };
 
-    return VerdictSchema.parse(verdict);
+    try {
+      return VerdictSchema.parse(verdict);
+    } catch (err) {
+      Sentry.captureException(err, {
+        extra: {
+          stage: "moderator_schema_validation",
+          claim_hash,
+          verdict_type: "single_claim",
+        },
+      });
+      throw err;
+    }
   }
 
   // Multiple sub-claims: aggregate using rules from constants.ts
@@ -430,7 +454,18 @@ async function runModeratorStage(
     pipeline_version: "2.0",
   };
 
-  return VerdictSchema.parse(verdict);
+  try {
+    return VerdictSchema.parse(verdict);
+  } catch (err) {
+    Sentry.captureException(err, {
+      extra: {
+        stage: "moderator_schema_validation",
+        claim_hash,
+        verdict_type: "aggregated",
+      },
+    });
+    throw err;
+  }
 }
 
 /**
