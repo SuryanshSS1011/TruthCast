@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { startPipeline } from '../../../../pipeline/orchestrator';
+import { v4 as uuidv4 } from 'uuid';
 import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
+
+// Global pending claims map - shared across routes via globalThis
+const globalForClaims = globalThis as unknown as {
+  pendingClaims: Map<string, string> | undefined;
+};
+export const pendingClaims = globalForClaims.pendingClaims ?? new Map<string, string>();
+if (!globalForClaims.pendingClaims) {
+  globalForClaims.pendingClaims = pendingClaims;
+}
 
 /**
  * POST /api/check
  *
- * Starts a new fact-checking pipeline for a claim.
- * Returns a session_id that can be used to stream progress via SSE.
+ * Stores a claim for processing and returns a session_id.
+ * The actual pipeline runs when the client connects to the stream endpoint.
  *
  * Rate limit: 1 request per IP per 5 seconds
  */
@@ -59,8 +68,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Start the pipeline asynchronously
-    const session_id = startPipeline(claim);
+    // Generate session ID and store claim
+    const session_id = uuidv4();
+    pendingClaims.set(session_id, claim);
+
+    // Clean up old pending claims (older than 5 minutes)
+    setTimeout(() => {
+      pendingClaims.delete(session_id);
+    }, 5 * 60 * 1000);
 
     return NextResponse.json(
       { session_id },
@@ -73,9 +88,9 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (error: any) {
-    console.error('Error starting pipeline:', error);
+    console.error('Error storing claim:', error);
     return NextResponse.json(
-      { error: 'Failed to start pipeline' },
+      { error: 'Failed to process claim' },
       { status: 500 }
     );
   }
