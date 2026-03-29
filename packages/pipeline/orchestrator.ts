@@ -10,7 +10,10 @@
 
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
-import type { Verdict } from "@truthcast/shared/schema";
+import { mkdir, writeFileSync, readFileSync, existsSync, rmSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import type { Verdict, VerdictLabelType } from "@truthcast/shared/schema";
 import { VerdictSchema } from "@truthcast/shared/schema";
 import { normalizeAndHash } from "./normalize.js";
 import { getCachedVerdict } from "./db/init.js";
@@ -346,6 +349,9 @@ async function runResearcherStage(sub_claims: string[]): Promise<{
 
 /**
  * Stage 3: Moderator
+ *
+ * Uses Gemini to synthesize a compound verdict, evaluating whether sub-claims
+ * together satisfy the original claim's logical structure.
  */
 async function runModeratorStage(
   claim: string,
@@ -354,56 +360,11 @@ async function runModeratorStage(
   debateResult: any = null
 ): Promise<Verdict> {
   const { VerdictSchema } = await import("@truthcast/shared/schema");
-  const { aggregateSubClaimVerdicts } = await import("@truthcast/shared/constants");
+  const { MODERATOR_AGGREGATION_PROMPT } = await import("@truthcast/shared/constants");
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
 
-  // If debate was triggered, use debate consensus
-  if (debateResult) {
-    // Parse verdict from debate consensus (e.g., "TRUE", "FALSE", "CONFLICTING")
-    const debateVerdict = debateResult.consensus.match(/(TRUE|MOSTLY_TRUE|MISLEADING|MOSTLY_FALSE|FALSE|CONFLICTING|UNVERIFIABLE)/i)?.[0].toUpperCase() || "CONFLICTING";
-
-    // Determine minority view (the losing side's argument)
-    const minority_view = debateResult.affirmative.confidence < debateResult.negative.confidence
-      ? debateResult.affirmative.argument
-      : debateResult.negative.argument;
-
-    // Collect all sources from research verdicts
-    const allSources = researchResult.verdicts.flatMap((v: any) => v.sources || []);
-    const uniqueSources = Array.from(
-      new Map(allSources.map((s: any) => [s.url, s])).values()
-    ).slice(0, 10);
-
-    const verdict: Verdict = {
-      claim_hash,
-      claim_text: claim,
-      sub_claims: researchResult.verdicts.map((v: any) => v.claim || claim),
-      verdict: debateVerdict as any,
-      confidence: Math.round((debateResult.affirmative.confidence + debateResult.negative.confidence) / 2),
-      reasoning: debateResult.consensus,
-      sources: uniqueSources,
-      minority_view,
-      debate_triggered: true,
-      agreement_score: debateResult.agreement_score,
-      checked_at: Math.floor(Date.now() / 1000),
-      ttl_policy: "SHORT", // Debated verdicts have shorter TTL (more controversial)
-      pipeline_version: "2.0",
-    };
-
-    try {
-      return VerdictSchema.parse(verdict);
-    } catch (err) {
-      Sentry.captureException(err, {
-        extra: {
-          stage: "moderator_schema_validation",
-          claim_hash,
-          verdict_type: "debate",
-        },
-      });
-      throw err;
-    }
-  }
-
-  // If single claim, use research verdict directly
-  if (researchResult.verdicts.length === 1) {
+  // If single claim with no debate, use research verdict directly (no aggregation needed)
+  if (researchResult.verdicts.length === 1 && !debateResult) {
     const research = researchResult.verdicts[0];
     const verdict: Verdict = {
       claim_hash,
@@ -435,22 +396,102 @@ async function runModeratorStage(
     }
   }
 
-  // Multiple sub-claims: aggregate using rules from constants.ts
-  const aggregated = aggregateSubClaimVerdicts(researchResult.verdicts);
+  // For multiple sub-claims or debate cases, use Gemini to synthesize verdict
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+  // Build evidence summary
+  const evidenceSummary = researchResult.verdicts.map((v: any, i: number) => {
+    const sourcesList = v.sources?.map((s: any) => `${s.domain} [${s.domain_tier}]`).join(", ") || "No sources";
+    return `Sub-claim ${i + 1}: "${v.claim || claim}"\nVerdict: ${v.verdict} (${v.confidence}% confidence)\nReasoning: ${v.reasoning}\nSources: ${sourcesList}`;
+  }).join("\n\n");
+
+  // Build debate context if applicable
+  let debateContext = "";
+  if (debateResult) {
+    debateContext = `
+
+## ADVERSARIAL DEBATE ARGUMENTS:
+The following debate was triggered due to low agreement among sub-claims.
+
+AFFIRMATIVE POSITION (arguing claim is TRUE):
+${debateResult.affirmative.argument}
+Confidence: ${debateResult.affirmative.confidence}%
+
+NEGATIVE POSITION (arguing claim is FALSE):
+${debateResult.negative.argument}
+Confidence: ${debateResult.negative.confidence}%
+
+Debate consensus: ${debateResult.consensus}`;
+  }
+
+  const prompt = `You are an impartial fact-checking moderator. Your task is to synthesize a final verdict for the ORIGINAL CLAIM based on evidence gathered for its decomposed sub-claims${debateResult ? " and adversarial debate arguments" : ""}.
+
+## ORIGINAL CLAIM (this is what you must ultimately evaluate):
+"${claim}"
+
+## DECOMPOSED SUB-CLAIMS AND EVIDENCE:
+${evidenceSummary}
+
+## CRITICAL EVALUATION STEP:
+Before applying aggregation rules, you MUST evaluate whether the sub-claims TOGETHER logically satisfy the original claim's structure. Consider:
+1. Does verifying each sub-claim individually prove the original claim as a whole?
+2. Are there implicit logical connectors (AND, OR, IF-THEN, causation) in the original claim that affect how sub-claim verdicts combine?
+3. Could all sub-claims be TRUE individually, but the original claim still be FALSE due to missing context or faulty implication?
+4. Could some sub-claims be irrelevant to the original claim's core assertion?
+
+Agreement Score: ${(researchResult.agreement_score * 100).toFixed(0)}% (consensus among sub-claim verdicts)${debateContext}
+
+${MODERATOR_AGGREGATION_PROMPT}
+
+## OUTPUT FORMAT:
+Provide a final verdict in JSON format with these exact fields:
+{
+  "verdict": "TRUE|MOSTLY_TRUE|MISLEADING|MOSTLY_FALSE|FALSE|CONFLICTING|UNVERIFIABLE",
+  "confidence": <0-100 integer>,
+  "reasoning": "<2-3 sentences explaining how sub-claims relate to the original claim's truth value>",
+  "minority_view": "<opposing perspective if debate was close, otherwise null>"
+}
+
+Respond with ONLY the JSON object, no additional text.`;
+
+  const result = await model.generateContent(prompt);
+  let responseText = result.response.text().trim();
+
+  // Extract JSON from markdown code blocks if present
+  if (responseText.includes("```json")) {
+    responseText = responseText.split("```json")[1].split("```")[0].trim();
+  } else if (responseText.includes("```")) {
+    responseText = responseText.split("```")[1].split("```")[0].trim();
+  }
+
+  const moderatorResponse = JSON.parse(responseText);
+
+  // Collect all sources from research verdicts
+  const allSources = researchResult.verdicts.flatMap((v: any) => v.sources || []);
+  const uniqueSources = Array.from(
+    new Map(allSources.map((s: any) => [s.url, s])).values()
+  ).slice(0, 10) as Array<{
+    url: string;
+    domain: string;
+    credibility_score: number;
+    domain_tier: string;
+    excerpt?: string;
+  }>;
 
   const verdict: Verdict = {
     claim_hash,
     claim_text: claim,
     sub_claims: researchResult.verdicts.map((v: any) => v.claim || claim),
-    verdict: aggregated.verdict,
-    confidence: aggregated.confidence,
-    reasoning: aggregated.reasoning,
-    sources: aggregated.sources,
-    minority_view: null,
-    debate_triggered: false,
-    agreement_score: aggregated.agreement_score,
+    verdict: moderatorResponse.verdict as VerdictLabelType,
+    confidence: moderatorResponse.confidence,
+    reasoning: moderatorResponse.reasoning,
+    sources: uniqueSources,
+    minority_view: moderatorResponse.minority_view || null,
+    debate_triggered: !!debateResult,
+    agreement_score: debateResult?.agreement_score ?? researchResult.agreement_score,
     checked_at: Math.floor(Date.now() / 1000),
-    ttl_policy: "LONG",
+    ttl_policy: debateResult ? "SHORT" : "LONG",
     pipeline_version: "2.0",
   };
 
@@ -461,7 +502,8 @@ async function runModeratorStage(
       extra: {
         stage: "moderator_schema_validation",
         claim_hash,
-        verdict_type: "aggregated",
+        verdict_type: debateResult ? "debate" : "aggregated",
+        raw_response: responseText,
       },
     });
     throw err;

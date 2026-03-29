@@ -36,3 +36,8 @@ Thumbs.db
 /tmp/
 .cache/
 output-phase3-test.mp3
+
+# Test artifacts
+playwright-report/
+test-results/
+*.tsbuildinfo

@@ -143,7 +143,41 @@ Rules:
 5. Max 10 sub-claims
 6. Preserve the original meaning and context
 
-Examples:
+## CRITICAL: Exclusivity Language Handling
+
+When a claim contains exclusivity language ("only", "solely", "not both", "exclusively", "neither", "just", "alone", "no one else", "the only"), you MUST preserve the exclusivity constraint as an additional sub-claim.
+
+The exclusivity constraint captures the logical structure that would otherwise be lost when decomposing. Without it, the moderator cannot correctly evaluate claims where individual parts may be true but the exclusive relationship is false.
+
+Exclusivity examples:
+
+Input: "Only ISRO discovered water on the Moon"
+Output: [
+  "ISRO discovered water on the Moon",
+  "Exclusivity constraint: No other space agency besides ISRO discovered water on the Moon"
+]
+(The exclusivity constraint is essential — if NASA also discovered water, the original claim is FALSE even though sub-claim 1 is TRUE)
+
+Input: "Einstein was the sole creator of the theory of relativity"
+Output: [
+  "Einstein created the theory of relativity",
+  "Exclusivity constraint: No other scientist contributed to creating the theory of relativity"
+]
+
+Input: "Neither the US nor China has landed on Mars"
+Output: [
+  "The US has not landed on Mars",
+  "China has not landed on Mars"
+]
+(No exclusivity sub-claim needed — "neither" is already captured by both negative assertions)
+
+Input: "The vaccine is the only way to prevent the disease"
+Output: [
+  "The vaccine prevents the disease",
+  "Exclusivity constraint: No other methods besides vaccination prevent the disease"
+]
+
+## Standard Decomposition Examples:
 
 Input: "Vaccines cause autism"
 Output: ["Vaccines cause autism"]
