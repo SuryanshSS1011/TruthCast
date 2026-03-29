@@ -21,6 +21,22 @@ TruthCast is a fully autonomous, multi-agent fact-checking pipeline that receive
 
 ---
 
+## Channels
+
+TruthCast is accessible via three surfaces that share the same pipeline and ledger:
+
+| Surface | How to use |
+|---------|-----------|
+| **Web app** | Visit truthcast.tech, paste a claim or URL |
+| **Telegram** | DM @TruthCastBot — "fact-check: [claim]" |
+| **Discord** | Use `/factcheck` slash command in our server |
+
+All three surfaces write to the same Solana ledger. A claim checked on Telegram is instantly available as a cache hit on Discord or the web app.
+
+**Setup Instructions:** See [`packages/pipeline/scripts/setup-openclaw.md`](packages/pipeline/scripts/setup-openclaw.md) for Telegram and Discord bot configuration.
+
+---
+
 ## Quick Start
 
 ### 1. Install Dependencies
