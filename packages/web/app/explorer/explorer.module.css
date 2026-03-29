@@ -1,0 +1,288 @@
+.main {
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: white;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+  font-size: 1rem;
+  opacity: 0.9;
+  font-weight: 300;
+  margin-bottom: 1rem;
+}
+
+.backLink {
+  display: inline-block;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+}
+
+.backLink:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.banner {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.banner svg {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.banner strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.banner p {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  opacity: 0.95;
+  margin: 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 16px;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  border: 4px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  background: #fef2f2;
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: #dc2626;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 16px;
+  color: #6b7280;
+}
+
+.emptyState svg {
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+
+.emptyState p {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.emptyState span {
+  font-size: 0.9rem;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.timelineItem {
+  position: relative;
+  margin-bottom: 2rem;
+  display: flex;
+}
+
+.timelineMarker {
+  position: absolute;
+  left: -1.5rem;
+  top: 0.75rem;
+}
+
+.timelineDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.timelineContent {
+  flex: 1;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.verdictHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.verdictBadge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.confidence {
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.verdictDetails {
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+
+.verdictDetails p {
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.verdictDetails strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.claimLink {
+  color: #667eea;
+  text-decoration: none;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+}
+
+.claimLink:hover {
+  text-decoration: underline;
+}
+
+.txLink {
+  color: #667eea;
+  text-decoration: none;
+  font-family: 'Courier New', monospace;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.txLink:hover {
+  text-decoration: underline;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.footer p {
+  margin-bottom: 0.5rem;
+}
+
+.footer code {
+  background: #f3f4f6;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .banner {
+    padding: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .timeline {
+    padding-left: 1.5rem;
+  }
+
+  .timelineContent {
+    padding: 1rem;
+  }
+
+  .verdictDetails {
+    font-size: 0.8rem;
+  }
+}

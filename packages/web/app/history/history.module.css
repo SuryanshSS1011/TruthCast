@@ -1,0 +1,201 @@
+.main {
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: white;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+  font-size: 1rem;
+  opacity: 0.9;
+  font-weight: 300;
+  margin-bottom: 1rem;
+}
+
+.backLink {
+  display: inline-block;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+}
+
+.backLink:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 16px;
+  color: #6b7280;
+}
+
+.emptyState svg {
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+
+.emptyState p {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.emptyState span {
+  font-size: 0.9rem;
+}
+
+.tableContainer {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+
+.table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table td {
+  padding: 1rem;
+}
+
+.verdictBadge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.claimCell {
+  max-width: 400px;
+}
+
+.claimLink {
+  color: #111827;
+  text-decoration: none;
+  display: block;
+  line-height: 1.5;
+  transition: color 0.2s;
+}
+
+.claimLink:hover {
+  color: #667eea;
+}
+
+.confidenceCell {
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.timeCell {
+  color: #6b7280;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.linksCell {
+  white-space: nowrap;
+}
+
+.linkIcons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.iconLink {
+  color: #6b7280;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.iconLink:hover {
+  color: #667eea;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .claimCell {
+    max-width: 200px;
+  }
+
+  .verdictBadge {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
+  }
+}

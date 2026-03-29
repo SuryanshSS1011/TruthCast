@@ -8,8 +8,10 @@ import { TTL_POLICIES } from "@truthcast/shared/constants";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Initialize database
-const dbPath = process.env.SQLITE_PATH || join(__dirname, "truthcast.db");
+// Initialize database - use absolute path from project root
+// Find the project root by going up from current directory
+const projectRoot = join(__dirname, '../../..');
+const dbPath = process.env.SQLITE_PATH || join(projectRoot, 'packages/pipeline/db/truthcast.db');
 export const db = new Database(dbPath);
 
 // Run schema

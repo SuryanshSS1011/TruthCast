@@ -16,6 +16,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { MAX_CLAIMS_TEXT, MAX_CLAIMS_VIDEO, MAX_CLAIMS_TWEET } from "@truthcast/shared/constants";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,6 +26,93 @@ dotenv.config({ path: join(__dirname, "../../.env") });
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+// URL detection helpers
+function isYouTubeURL(text: string): boolean {
+  return /youtube\.com|youtu\.be/i.test(text);
+}
+
+function isTwitterURL(text: string): boolean {
+  return /twitter\.com|x\.com/i.test(text);
+}
+
+function isURL(text: string): boolean {
+  try {
+    new URL(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extract factual claims from a URL (YouTube video, Twitter/X post, article)
+ */
+async function extractClaimsFromURL(url: string): Promise<string[]> {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    // Determine URL type and max claims
+    let maxClaims: number;
+    let promptSuffix: string;
+
+    if (isYouTubeURL(url)) {
+      maxClaims = MAX_CLAIMS_VIDEO;
+      promptSuffix = "Extract the top 3 most significant verifiable factual claims from this video transcript. Ignore opinions, predictions, and subjective statements. Rank by check-worthiness.";
+    } else if (isTwitterURL(url)) {
+      maxClaims = MAX_CLAIMS_TWEET;
+      promptSuffix = "Extract the single main factual claim from this tweet. Strip retweet attribution, hashtags, and engagement context. Return the core verifiable assertion only.";
+    } else {
+      // Generic article/webpage
+      maxClaims = MAX_CLAIMS_TEXT;
+      promptSuffix = "Extract the top 5 most significant verifiable factual claims from this article. Ignore opinions, predictions, and subjective statements. Rank by check-worthiness.";
+    }
+
+    const prompt = `${promptSuffix}
+
+Return as JSON array: [{claim: string, checkworthiness: number (0-1)}]
+
+Rules:
+1. Only include factual claims that can be objectively verified
+2. Exclude opinions, predictions, personal anecdotes, and subjective statements
+3. Rank by check-worthiness (importance + verifiability)
+4. Return at most ${maxClaims} claims
+
+Return ONLY the JSON array, no additional text.`;
+
+    const result = await model.generateContent([
+      prompt,
+      { text: url }
+    ]);
+
+    const response = result.response;
+    const text = response.text();
+
+    // Parse JSON response
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.warn("Could not parse URL extraction response");
+      return [url]; // Fallback to treating URL as a claim
+    }
+
+    const extracted: { claim: string; checkworthiness: number }[] = JSON.parse(jsonMatch[0]);
+
+    // Sort by checkworthiness and take top N
+    const sortedClaims = extracted
+      .sort((a, b) => b.checkworthiness - a.checkworthiness)
+      .slice(0, maxClaims)
+      .map((item) => item.claim);
+
+    if (sortedClaims.length === 0) {
+      return [url]; // Fallback
+    }
+
+    return sortedClaims;
+  } catch (error) {
+    console.error("URL claim extraction failed:", error);
+    return [url]; // Fallback to treating URL as a claim
+  }
+}
+
 /**
  * Decompose a claim into atomic sub-claims
  *
@@ -33,6 +121,14 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
  */
 export async function decomposeClaim(claim: string): Promise<string[]> {
   try {
+    const trimmedClaim = claim.trim();
+
+    // Check if input is a URL
+    if (isURL(trimmedClaim)) {
+      return await extractClaimsFromURL(trimmedClaim);
+    }
+
+    // Regular text decomposition
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `Decompose this claim into atomic, independently verifiable sub-claims:

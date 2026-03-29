@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TruthCast</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">TruthCast</h1>
+      <p class="subtitle">AI Fact-Checking</p>
+    </header>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading verdict...</p>
+    </div>
+
+    <div id="no-verdict" class="no-verdict">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p>No verdict to display</p>
+      <span class="hint">Select text on any webpage and click "Check Claim"</span>
+    </div>
+
+    <div id="verdict-card" class="verdict-card" style="display: none;">
+      <div class="verdict-header">
+        <span id="verdict-label" class="verdict-label"></span>
+        <span id="confidence" class="confidence"></span>
+      </div>
+
+      <div class="verdict-body">
+        <p id="reasoning" class="reasoning"></p>
+
+        <div id="sources-container" class="sources" style="display: none;">
+          <h3>Sources</h3>
+          <ul id="sources-list"></ul>
+        </div>
+
+        <div id="debate-indicator" class="debate" style="display: none;">
+          <h3>⚔️ Adversarial Debate Triggered</h3>
+          <p id="debate-text"></p>
+        </div>
+
+        <div class="metadata">
+          <p><strong>Checked:</strong> <span id="checked-at"></span></p>
+          <p><strong>TTL Policy:</strong> <span id="ttl-policy"></span></p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="view-full" class="btn btn-primary">View Full Report</button>
+        <button id="copy-link" class="btn btn-secondary">Copy Link</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

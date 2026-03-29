@@ -8,6 +8,11 @@ export const TTL_POLICIES = {
   STATIC: Infinity, // No expiry - for historical facts, scientific consensus
 } as const;
 
+// Maximum claims to extract per input type
+export const MAX_CLAIMS_TEXT = 5;      // Long-form text or articles
+export const MAX_CLAIMS_VIDEO = 3;     // YouTube videos
+export const MAX_CLAIMS_TWEET = 1;     // Twitter/X posts
+
 // Verdict Severity Order (most to least severe)
 export const VERDICT_SEVERITY: VerdictLabelType[] = [
   "FALSE",
