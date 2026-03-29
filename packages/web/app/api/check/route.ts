@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
 const globalForClaims = globalThis as unknown as {
   pendingClaims: Map<string, string> | undefined;
 };
-export const pendingClaims = globalForClaims.pendingClaims ?? new Map<string, string>();
+const pendingClaims = globalForClaims.pendingClaims ?? new Map<string, string>();
 if (!globalForClaims.pendingClaims) {
   globalForClaims.pendingClaims = pendingClaims;
 }

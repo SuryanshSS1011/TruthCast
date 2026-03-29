@@ -27,12 +27,6 @@ function SourceRow({ source }: { source: Source }) {
   const tierColors = COLORS.tier[tierKey] || COLORS.tier.UNKNOWN;
   const tierLabel = tierLabels[source.domain_tier] || '—';
 
-  const stanceColor = source.stance === 'SUPPORTS'
-    ? COLORS.verdict.TRUE.fg
-    : source.stance === 'REFUTES'
-      ? COLORS.verdict.FALSE.fg
-      : COLORS.text.muted;
-
   return (
     <Box
       sx={{
