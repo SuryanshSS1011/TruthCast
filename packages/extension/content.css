@@ -1,30 +1,40 @@
 /* packages/extension/content.css */
 /* Styles for floating button and notifications */
+/* Design tokens mirrored from web app */
 
 #truthcast-floating-button {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.08));
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #22C55E;
   border-radius: 24px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.25);
   transition: all 0.2s ease;
   animation: truthcast-fade-in 0.2s ease;
 }
 
 #truthcast-floating-button:hover {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.15));
+  border-color: rgba(34, 197, 94, 0.6);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.35);
 }
 
 #truthcast-floating-button svg {
   flex-shrink: 0;
+}
+
+#truthcast-floating-button svg path {
+  stroke: #22C55E;
 }
 
 @keyframes truthcast-fade-in {
@@ -41,27 +51,33 @@
 .truthcast-notification {
   padding: 14px 20px;
   border-radius: 8px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transition: opacity 0.3s ease;
   animation: truthcast-slide-in 0.3s ease;
+  background: #111318;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .truthcast-notification-info {
-  background: #3b82f6;
-  color: white;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22C55E;
 }
 
 .truthcast-notification-success {
-  background: #10b981;
-  color: white;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22C55E;
 }
 
 .truthcast-notification-error {
-  background: #ef4444;
-  color: white;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #EF4444;
 }
 
 @keyframes truthcast-slide-in {

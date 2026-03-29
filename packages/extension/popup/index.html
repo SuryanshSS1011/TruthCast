@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TruthCast</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-state="idle">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="10" stroke="var(--verdict-true)" stroke-width="1.5"/>
+        <path d="M6 11l3 3 7-7" stroke="var(--verdict-true)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>TruthCast</span>
+    </div>
+    <div class="status-indicator">
+      <span class="status-dot"></span>
+      <span class="status-text">Ready</span>
+    </div>
+  </header>
+
+  <!-- Idle State -->
+  <section class="state-idle">
+    <div class="idle-content">
+      <p class="idle-title">Select text on any page</p>
+      <p class="idle-description">Highlight a claim to fact-check it instantly</p>
+    </div>
+    <div class="recent-checks">
+      <h3>Recent Checks</h3>
+      <div id="recent-list" class="recent-list">
+        <p class="empty-state">No recent checks</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Selected State -->
+  <section class="state-selected">
+    <div class="selected-claim">
+      <p class="claim-label">Selected Claim</p>
+      <p id="selected-text" class="claim-text"></p>
+    </div>
+    <button id="check-btn" class="check-button">
+      CHECK
+      <span class="arrow">→</span>
+    </button>
+  </section>
+
+  <!-- Running State -->
+  <section class="state-running">
+    <div class="running-content">
+      <div class="stage-indicator">
+        <div class="stage-progress">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <p id="stage-name" class="stage-name">Initializing...</p>
+      </div>
+      <div class="claim-preview">
+        <p id="running-claim" class="claim-text"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verdict State -->
+  <section class="state-verdict">
+    <div id="verdict-band" class="verdict-band">
+      <p id="verdict-label" class="verdict-label"></p>
+      <div class="confidence-row">
+        <span id="confidence-value" class="confidence-value"></span>
+        <div class="confidence-bar">
+          <div id="confidence-fill" class="confidence-fill"></div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict-body">
+      <p id="verdict-reasoning" class="reasoning"></p>
+      <div class="verdict-actions">
+        <a id="view-full" href="#" target="_blank" class="action-link">View Full Verdict →</a>
+        <button id="new-check-btn" class="action-button">New Check</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <a href="http://localhost:3000" target="_blank" class="footer-link">localhost:3000</a>
+    <span class="footer-divider">·</span>
+    <span class="footer-version">v1.0.0</span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

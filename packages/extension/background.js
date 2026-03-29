@@ -1,8 +1,8 @@
 // packages/extension/background.js
 // Background service worker for TruthCast - handles API calls and caching
 
-// API endpoint (switch based on environment)
-const API_BASE_URL = 'http://localhost:3000'; // Change to https://truthcast.tech in production
+// API endpoint
+const API_BASE_URL = 'http://localhost:3000';
 
 // Cache duration (30 days in milliseconds)
 const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000;
@@ -124,13 +124,16 @@ function notifyTab(tabId, message, type) {
   });
 }
 
-// Show verdict in a new popup window
+// Store verdict for popup to access
 function showVerdictPopup(verdict, tabId) {
   // Store verdict in storage for popup to access
   chrome.storage.local.set({ latestVerdict: verdict });
 
-  // Open popup
-  chrome.action.openPopup();
+  // Notify the tab that verdict is ready (shows notification)
+  const verdictText = verdict.verdict.replace(/_/g, ' ');
+  notifyTab(tabId, `Verdict: ${verdictText} (${verdict.confidence}%) - Click extension to view`, 'success');
+
+  console.log('TruthCast: Verdict stored, user can click extension icon to view');
 }
 
 // Cache functions using chrome.storage.local

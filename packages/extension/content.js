@@ -111,6 +111,23 @@ function showNotification(message, type) {
   }, 3000);
 }
 
+// Listen for messages from popup and background
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'GET_SELECTION') {
+    const selectedText = window.getSelection().toString().trim();
+    sendResponse({ text: selectedText });
+    return true;
+  }
+
+  if (request.type === 'SHOW_NOTIFICATION') {
+    showNotification(request.message, request.notificationType);
+    sendResponse({ success: true });
+    return true;
+  }
+
+  return false;
+});
+
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
   hideFloatingButton();
