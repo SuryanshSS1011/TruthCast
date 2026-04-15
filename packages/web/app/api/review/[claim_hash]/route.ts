@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { claim_hash: string } }
 ) {
   try {
-    const verdict = getCachedVerdict(params.claim_hash);
+    const verdict = await getCachedVerdict(params.claim_hash);
 
     if (!verdict) {
       return NextResponse.json(

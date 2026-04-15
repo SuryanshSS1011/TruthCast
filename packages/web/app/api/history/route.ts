@@ -1,35 +1,28 @@
 import { NextResponse } from 'next/server';
-import { db } from '@truthcast/pipeline/db/init';
+import { getAllVerdicts, getStats } from '@truthcast/pipeline/db/init';
 
 export const dynamic = 'force-dynamic';
 
-interface VerdictRow {
-  claim_hash: string;
-  claim_text: string;
-  verdict_label: string;
-  confidence: number;
-  checked_at: number;
-  tx_hash: string | null;
-}
-
 export async function GET() {
   try {
-    const verdicts = db
-      .prepare(
-        `SELECT claim_hash, claim_text, verdict_label, confidence, checked_at, tx_hash
-         FROM verdicts
-         ORDER BY checked_at DESC
-         LIMIT 50`
-      )
-      .all() as VerdictRow[];
+    const [verdicts, stats] = await Promise.all([
+      getAllVerdicts(50),
+      getStats()
+    ]);
 
-    const totalCount = db
-      .prepare('SELECT COUNT(*) as count FROM verdicts')
-      .get() as { count: number };
+    // Map verdicts to the expected format
+    const formattedVerdicts = verdicts.map(v => ({
+      claim_hash: v.claim_hash,
+      claim_text: v.claim_text,
+      verdict_label: v.verdict,
+      confidence: v.confidence,
+      checked_at: v.checked_at,
+      tx_hash: v.tx_hash || null
+    }));
 
     return NextResponse.json({
-      verdicts,
-      totalCount: totalCount.count,
+      verdicts: formattedVerdicts,
+      totalCount: stats.total,
     });
   } catch (error: any) {
     console.error('History API error:', error);

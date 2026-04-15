@@ -177,7 +177,7 @@ async function executePipelineInternal(
       message: "Stage 0: Checking cache for existing verdict...",
     });
 
-    const cached = getCachedVerdict(claim_hash);
+    const cached = await getCachedVerdict(claim_hash);
     if (cached) {
       session.status = "completed";
       session.verdict = cached;

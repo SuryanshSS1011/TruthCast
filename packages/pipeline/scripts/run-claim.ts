@@ -89,7 +89,7 @@ async function runPipeline(claim: string): Promise<Verdict> {
 
     // Stage 0: Cache check
     console.error("[Stage 0/4] Checking cache...");
-    const cached = getCachedVerdict(claimHash);
+    const cached = await getCachedVerdict(claimHash);
     if (cached) {
       console.error("[Stage 0/4] ✓ Cache hit - returning cached verdict");
       return cached;

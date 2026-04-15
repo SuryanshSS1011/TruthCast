@@ -11,7 +11,7 @@ interface VerdictPageProps {
 export async function generateMetadata({
   params,
 }: VerdictPageProps): Promise<Metadata> {
-  const verdict = getCachedVerdict(params.claim_hash);
+  const verdict = await getCachedVerdict(params.claim_hash);
 
   if (!verdict) {
     return {
@@ -73,8 +73,8 @@ export async function generateMetadata({
   };
 }
 
-export default function VerdictPage({ params }: VerdictPageProps) {
-  const verdict = getCachedVerdict(params.claim_hash);
+export default async function VerdictPage({ params }: VerdictPageProps) {
+  const verdict = await getCachedVerdict(params.claim_hash);
 
   if (!verdict) {
     notFound();
