@@ -5,6 +5,7 @@ import { ContentCopy, OpenInNew, ExpandMore, ExpandLess } from '@mui/icons-mater
 import { useState } from 'react';
 import { COLORS, getVerdictColors } from '@/theme/theme';
 import VerdictBadge from './VerdictBadge';
+import AudioPlayer from './AudioPlayer';
 import type { Verdict, Source } from '@truthcast/shared/schema';
 
 interface VerdictCardProps {
@@ -340,6 +341,26 @@ export default function VerdictCard({ verdict }: VerdictCardProps) {
             </Collapse>
           </Box>
         )}
+
+        {/* Audio Player - ElevenLabs TTS */}
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            sx={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: '0.625rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: COLORS.text.muted,
+              mb: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            🔊 Voice Summary
+          </Typography>
+          <AudioPlayer src={verdict.audio_url} verdict={verdict.verdict} />
+        </Box>
       </Box>
 
       {/* Blockchain ledger row */}
