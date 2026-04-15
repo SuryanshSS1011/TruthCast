@@ -289,6 +289,33 @@ Domain-level credibility scoring is the strongest signal for source quality. MBF
 
 ---
 
+## Post-Hackathon Improvements
+
+After the initial hackathon build, the following enhancements were made:
+
+### Audio Player Integration
+- Added MUI-styled audio player component for ElevenLabs TTS playback
+- Waveform visualization with play/pause controls
+- Integrated into verdict cards for voice summary playback
+
+### Error Handling & UX
+- Themed error toast notifications for API failures
+- Specific handling for token limit errors (Gemini 429, ElevenLabs quota)
+- Real-time error feedback via SSE stream
+
+### Serverless Database (Turso)
+- Migrated from SQLite-only to hybrid Turso/SQLite architecture
+- **Turso** (libSQL) for Vercel/serverless deployment - same SQL syntax as SQLite
+- **SQLite** remains for local development
+- Free tier: 9GB storage, 500M reads/month
+
+### Deployed
+- Vercel-compatible build configuration
+- Environment variables documented for production
+- Native module issues resolved (better-sqlite3 → optional dependency)
+
+---
+
 ## Research Foundations
 
 - **Standard fact-checking pipeline**: Guo et al., TACL 2022
