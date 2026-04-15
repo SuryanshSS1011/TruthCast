@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Box, Container, Typography, Button, alpha } from '@mui/material';
 import type { Verdict } from '@truthcast/shared/schema';
 import { COLORS } from '@/theme/theme';
+import { useToast } from '@/components/mui/ErrorToast';
 
 import Navbar from '@/components/mui/Navbar';
 import HeroSection from '@/components/mui/HeroSection';
@@ -25,6 +26,7 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [error, setError] = useState('');
+  const { showApiError, showTokenLimitError } = useToast();
 
   // Fetch stats on mount and poll every 30s
   useEffect(() => {
@@ -97,6 +99,15 @@ export default function Home() {
           setIsLoading(false);
           setError(data.message);
           eventSource.close();
+
+          // Show appropriate toast based on error type
+          if (data.error_type === 'TOKEN_LIMIT') {
+            showTokenLimitError();
+          } else if (data.error_type === 'AUTH_ERROR') {
+            showApiError('API Authentication Error', data.error_details);
+          } else {
+            showApiError(data.message, data.error_details);
+          }
         }
       };
 
@@ -104,10 +115,13 @@ export default function Home() {
         setIsLoading(false);
         setError('Connection to server lost');
         eventSource.close();
+        showApiError('Connection Lost', 'Lost connection to the server. Please try again.');
       };
     } catch (err: any) {
       setIsLoading(false);
       setError(err.message);
+      console.error('[TruthCast] Submit error:', err);
+      showApiError('Request Failed', err.message);
     }
   };
 

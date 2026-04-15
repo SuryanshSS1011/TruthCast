@@ -123,8 +123,47 @@ Return ONLY a JSON object with this exact structure:
       reasoning: parsed.reasoning,
       sources,
     };
-  } catch (error) {
-    console.error("Gemini API error:", error);
+  } catch (error: any) {
+    // Enhanced error logging for API issues
+    const errorMessage = error?.message || String(error);
+    const statusCode = error?.status || error?.code || 'UNKNOWN';
+
+    console.error('[TruthCast Gemini API Error]', {
+      timestamp: new Date().toISOString(),
+      claim: claim.substring(0, 100),
+      errorMessage,
+      statusCode,
+      stack: error?.stack,
+    });
+
+    // Detect token/quota limit errors
+    if (
+      errorMessage.includes('RESOURCE_EXHAUSTED') ||
+      errorMessage.includes('429') ||
+      errorMessage.includes('quota') ||
+      errorMessage.includes('rate limit') ||
+      errorMessage.includes('token') ||
+      statusCode === 429 ||
+      statusCode === 'RESOURCE_EXHAUSTED'
+    ) {
+      const tokenError = new Error('API_TOKEN_LIMIT: The AI service has reached its usage limit. Please try again later.');
+      (tokenError as any).code = 'TOKEN_LIMIT';
+      (tokenError as any).isTokenLimit = true;
+      throw tokenError;
+    }
+
+    // Detect authentication errors
+    if (
+      errorMessage.includes('401') ||
+      errorMessage.includes('403') ||
+      errorMessage.includes('PERMISSION_DENIED') ||
+      errorMessage.includes('UNAUTHENTICATED')
+    ) {
+      const authError = new Error('API_AUTH_ERROR: Invalid or expired API key. Please check your configuration.');
+      (authError as any).code = 'AUTH_ERROR';
+      throw authError;
+    }
+
     throw error;
   }
 }

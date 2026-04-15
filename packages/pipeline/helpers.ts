@@ -134,7 +134,22 @@ export async function elevenLabsTTS(text: string): Promise<string | null> {
     );
 
     if (!response.ok) {
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      const statusCode = response.status;
+      console.error('[TruthCast ElevenLabs API Error]', {
+        timestamp: new Date().toISOString(),
+        statusCode,
+        statusText: response.statusText,
+      });
+
+      // Detect token/quota limit errors
+      if (statusCode === 429 || statusCode === 402) {
+        const tokenError = new Error('API_TOKEN_LIMIT: ElevenLabs usage limit reached. Audio generation skipped.');
+        (tokenError as any).code = 'TOKEN_LIMIT';
+        (tokenError as any).isTokenLimit = true;
+        throw tokenError;
+      }
+
+      throw new Error(`ElevenLabs API error: ${statusCode}`);
     }
 
     const audioBuffer = await response.arrayBuffer();

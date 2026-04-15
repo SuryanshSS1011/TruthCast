@@ -92,12 +92,34 @@ export async function GET(req: NextRequest) {
           }
         });
       } catch (error: any) {
-        console.error(`Pipeline error for session ${session_id}:`, error);
+        console.error(`[TruthCast Pipeline Error] Session ${session_id}:`, {
+          message: error.message,
+          code: error.code,
+          isTokenLimit: error.isTokenLimit,
+          stack: error.stack,
+        });
+
+        // Determine error type for frontend
+        let errorType = 'UNKNOWN';
+        let userMessage = error.message;
+
+        if (error.isTokenLimit || error.code === 'TOKEN_LIMIT') {
+          errorType = 'TOKEN_LIMIT';
+          userMessage = 'The AI service has reached its usage limit. Please try again later.';
+        } else if (error.code === 'AUTH_ERROR') {
+          errorType = 'AUTH_ERROR';
+          userMessage = 'API authentication failed. Please contact support.';
+        } else if (error.message?.includes('GEMINI') || error.message?.includes('Gemini')) {
+          errorType = 'API_ERROR';
+        }
+
         sendEvent({
           session_id,
           event: 'error',
           progress: 0,
-          message: `Pipeline failed: ${error.message}`,
+          message: `Pipeline failed: ${userMessage}`,
+          error_type: errorType,
+          error_details: error.message,
         });
         closeStream();
       }
