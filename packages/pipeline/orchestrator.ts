@@ -596,9 +596,27 @@ async function runPublisherStage(verdict: Verdict): Promise<{ tx_hash: string | 
   }
 
   // Generate audio (non-fatal if fails)
-  const voiceScript = `This claim is ${verdict.verdict.toLowerCase().replace("_", " ")}, with ${
-    verdict.confidence >= 90 ? "very high" : verdict.confidence >= 70 ? "high" : "moderate"
-  } confidence. ${verdict.reasoning.split(/[.!?]/)[0]}.`;
+  // Use full reasoning with sentence-boundary truncation for very long texts
+  const confidenceLevel = verdict.confidence >= 90 ? "very high" : verdict.confidence >= 70 ? "high" : verdict.confidence >= 50 ? "moderate" : "low";
+  const verdictLabel = verdict.verdict.toLowerCase().replace(/_/g, " ");
+
+  // Truncate at sentence boundary if reasoning exceeds limit (keeps complete sentences only)
+  const MAX_REASONING_CHARS = 800;
+  let reasoning = verdict.reasoning;
+  if (reasoning.length > MAX_REASONING_CHARS) {
+    const sentences = reasoning.match(/[^.!?]+[.!?]+/g) || [reasoning];
+    reasoning = "";
+    for (const sentence of sentences) {
+      if ((reasoning + sentence).length <= MAX_REASONING_CHARS) {
+        reasoning += sentence;
+      } else {
+        break;
+      }
+    }
+    reasoning = reasoning.trim() || sentences[0]; // Fallback to first sentence if none fit
+  }
+
+  const voiceScript = `This claim is rated ${verdictLabel}, with ${confidenceLevel} confidence at ${verdict.confidence} percent. ${reasoning}`;
 
   const audio_url = await elevenLabsTTS(voiceScript);
 
