@@ -6,7 +6,7 @@
   "exports": {
     "./schema": "./schema.ts",
     "./constants": "./constants.ts",
-    "./mbfc.json": "./mbfc.json"
+    "./mbfc-data": "./mbfc-data.ts"
   },
   "dependencies": {
     "zod": "^3.22.4"

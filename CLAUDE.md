@@ -18,7 +18,7 @@ truthcast/
 │   ├── shared/                          # Single source of truth for types
 │   │   ├── schema.ts                    # Zod schemas: VerdictSchema, SourceSchema, VerdictLabel
 │   │   ├── constants.ts                 # TTL_POLICIES, VERDICT_SEVERITY, aggregation functions
-│   │   └── mbfc.json                    # MBFC expert-rated domain dataset (~4000 domains)
+│   │   └── mbfc-data.ts                 # MBFC expert-rated domain dataset (~3900 domains)
 │   │
 │   ├── pipeline/                        # Core fact-checking engine
 │   │   ├── orchestrator.ts              # Main entry: startPipeline(), executePipeline(), pipelineEmitter
@@ -430,7 +430,7 @@ TruthCast is accessible via three surfaces:
   - Call Gemini `gemini-2.0-flash` with `google_search` tool enabled
   - For each sub-claim: retrieve top sources with excerpts
 - **MBFC Scoring** (`mbfc-scorer.ts`):
-  - Match source domains against `mbfc.json` (~4000 domains)
+  - Match source domains against `mbfc-data.ts` (~3900 domains)
   - Assign tier: "HIGH" (0.9), "MEDIUM-HIGH" (0.75), "MEDIUM" (0.6), "LOW" (0.3), "UNKNOWN" (0.5)
 - **Agreement Score Calculation** (`debate.ts` → `calculateAgreementScore()`):
   - Measure consensus among sub-claim verdicts

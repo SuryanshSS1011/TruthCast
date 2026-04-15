@@ -2,19 +2,10 @@
  * MBFC Domain Credibility Scoring
  *
  * Scores source domains using the Media Bias/Fact Check dataset.
- * ~4,000 expert-rated domains with credibility scores from 0.0 to 1.0.
+ * Expert-rated domains with credibility scores from 0.0 to 1.0.
  */
 
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load MBFC dataset
-const mbfcPath = join(__dirname, "../shared/mbfc.json");
-const mbfcData: Record<string, number> = JSON.parse(readFileSync(mbfcPath, "utf-8"));
+import { mbfcData } from "@truthcast/shared/mbfc-data";
 
 /**
  * Extract the base domain from a URL
