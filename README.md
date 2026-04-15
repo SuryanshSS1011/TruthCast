@@ -313,28 +313,6 @@ Domain-level credibility scoring is the strongest signal for source quality. MBF
 
 ---
 
-## Deployment
-
-### Vercel (Recommended)
-
-1. Push to GitHub
-2. Import project in Vercel
-3. Add environment variables
-4. Deploy
-
-### Docker
-
-```dockerfile
-FROM node:22-alpine
-WORKDIR /app
-COPY . .
-RUN npm install && npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
----
-
 ## Contributing
 
 1. Fork the repository
