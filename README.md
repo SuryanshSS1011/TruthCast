@@ -66,7 +66,7 @@ TruthCast is a fully autonomous, multi-agent fact-checking pipeline that:
 | **Immutability** | Solana Memo | Permanent on-chain verdict storage (devnet) |
 | **Voice** | ElevenLabs TTS | Natural voice verdict summaries |
 | **Frontend** | Next.js 14 | Real-time SSE progress streaming |
-| **Database** | SQLite + better-sqlite3 | Fast verdict caching with TTL policies |
+| **Database** | Turso (prod) / SQLite (dev) | Fast verdict caching with TTL policies |
 
 ---
 
@@ -199,7 +199,7 @@ truthcast/
 │   │   ├── mbfc-scorer.ts    # Domain credibility scoring
 │   │   ├── debate.ts         # Adversarial debate system
 │   │   ├── helpers.ts        # Solana write, TTS generation
-│   │   └── db/init.ts        # SQLite connection + cache
+│   │   └── db/init.ts        # Turso/SQLite hybrid database
 │   │
 │   └── web/                  # Next.js 14 frontend
 │       ├── app/              # App Router pages
@@ -309,7 +309,9 @@ Domain-level credibility scoring is the strongest signal for source quality. MBF
 | `ELEVENLABS_API_KEY` | No | ElevenLabs API for TTS |
 | `ELEVENLABS_VOICE_ID` | No | Voice ID (default: Sarah) |
 | `SENTRY_DSN` | No | Sentry DSN for error tracking |
-| `SQLITE_PATH` | No | Custom SQLite path |
+| `TURSO_DATABASE_URL` | Prod | Turso database URL for serverless |
+| `TURSO_AUTH_TOKEN` | Prod | Turso auth token |
+| `SQLITE_PATH` | No | Custom SQLite path (local dev) |
 
 ---
 
