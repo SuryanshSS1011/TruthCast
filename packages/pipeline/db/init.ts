@@ -27,11 +27,19 @@ let sqliteAvailable = false;
 
 // Try to initialize SQLite - gracefully fail for serverless environments
 function initDatabase() {
-  if (db !== null) return; // Already initialized
+  if (db !== null || sqliteAvailable === false) return; // Already initialized or known to be unavailable
+
+  // Skip SQLite in serverless/edge environments
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY) {
+    console.log("[TruthCast] Serverless environment detected - running without SQLite cache");
+    sqliteAvailable = false;
+    return;
+  }
 
   try {
-    // Dynamic import to avoid build-time failures
-    const Database = require("better-sqlite3");
+    // Dynamic require to avoid build-time bundling
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const Database = eval('require')("better-sqlite3");
 
     // Resolve database path
     const dbPath = resolveDbPath();
@@ -47,7 +55,7 @@ function initDatabase() {
     sqliteAvailable = true;
     console.log("[TruthCast] SQLite database initialized:", dbPath);
   } catch (error: any) {
-    console.warn("[TruthCast] SQLite unavailable (serverless environment):", error.message);
+    console.warn("[TruthCast] SQLite unavailable:", error.message);
     console.warn("[TruthCast] Running without cache - each request will run full pipeline");
     sqliteAvailable = false;
     db = null;

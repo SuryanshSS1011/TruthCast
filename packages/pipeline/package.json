@@ -19,9 +19,6 @@
     "dotenv": "^16.4.1",
     "uuid": "^9.0.1"
   },
-  "optionalDependencies": {
-    "better-sqlite3": "^9.4.0"
-  },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",
     "@types/node": "^20.11.16",

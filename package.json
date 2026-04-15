@@ -12,9 +12,6 @@
     "test-audio": "node serve-test.js"
   },
   "engines": {
-    "node": ">=22.0.0"
-  },
-  "dependencies": {
-    "better-sqlite3": "^12.8.0"
+    "node": ">=20.0.0"
   }
 }
