@@ -14,11 +14,13 @@
     "@solana/spl-memo": "^0.2.5",
     "@solana/web3.js": "^1.91.1",
     "@truthcast/shared": "*",
-    "better-sqlite3": "^9.4.0",
     "bs58": "^5.0.0",
     "discord.js": "^14.25.1",
     "dotenv": "^16.4.1",
     "uuid": "^9.0.1"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^9.4.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",
